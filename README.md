@@ -193,11 +193,11 @@ A função _ML.PREDICT_ aplica o modelo treinado a novos dados. Ela aplica os pa
 ### **Como funciona o Modelo?**  
 Diferente da regressão linear da Parte 2, o XGBoost cria um "conjunto de árvores de decisão". Ele avalia o pedido fazendo diversas perguntas em sequência (ex: "O pedido atrasou?", "O frete foi mais caro que o produto?", "Foram comprados muitos itens?"). 
   - **O que é uma Árvore de Decisão?** Imagine um fluxograma de perguntas e respostas. O modelo avalia o pedido fazendo divisões lógicas sequenciais. A primeira "ramificação" pode ser: *"O pedido atrasou?"*. Se a resposta for sim, ele segue por um caminho; se não, segue por outro. Em seguida, pode perguntar: *"O frete custou mais de 20% do valor do produto?"*. Ele continua fazendo essas perguntas até chegar a uma conclusão, que é a classificação final: Satisfeito ou Insatisfeito.
-  - **A Lógica do _Gradient Boosting_:** Ele não cria apenas uma árvore, mas sim centenas delas de forma sequencial. Cada nova árvore é treinada com o objetivo específico de **corrigir os erros** cometidos pelas árvores anteriores. É como uma equipe onde cada novo membro foca exclusivamente em consertar os pontos cegos dos anteriores, resultando em um modelo final de altíssima precisão.
+  - **A Lógica do _Gradient Boosting_:** Ele não cria apenas uma árvore, mas sim centenas delas de forma sequencial. Cada nova árvore é treinada com o objetivo específico de **corrigir os erros** cometidos pelas árvores anteriores. É como uma equipe onde cada novo membro foca exclusivamente em consertar os pontos cegos dos anteriores, resultando em um modelo final de alta precisão.
 
 </details>
 
-#### A metodologia do projeto foi dividida em 3 etapas para criação e avaliação do modelo:
+#### A metodologia do projeto foi dividida em 4 etapas para criação e avaliação do modelo:
 
 - **Etapa 1: Engenharia de Features e Preparação da Base (`scripts/03_treinamento_xgboost.py`)**  
 A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não representam todo o cenário. Para suprir essa lacuna e prever o sentimento do cliente com precisão, novas variáveis preditoras foram geradas para capturar as complexidades logísticas e comerciais. A partir dos datasets originais no Pandas, foi realizado o cruzamento de dados (JOIN) para consolidar a jornada de compra em uma única base, as features criadas são:   
@@ -275,7 +275,15 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
     - `max_depth`: Controlando a profundidade máxima das árvores para evitar que o modelo ficasse excessivamente complexo
     - `learning_rate` e `n_estimators`: Balanceando a velocidade de aprendizado e a quantidade de árvores construídas, encontrando o ponto ideal de máxima performance
     
-    **Resultado da Otimização:** O *Recall* da classe minoritária manteve-se estável nos mesmos 57%. Do ponto de vista de negócios e ciência de dados, isso comprovou que a configuração base já havia capturado os padrões logísticos de forma robusta. Como a performance geral se manteve estável e validou os insights extraídos anteriormente, o modelo foi aprovado para deploy.
+    **Resultado da Otimização:** O *Recall* da classe insatisfeito ficou igual (57%), mas as demais métricas caíram um pouco em relação ao modelo inicial:
+
+    | Modelo | Precisão (insat.) | Recall (insat.) | F1 (insat.) | Acurácia | ROC-AUC |
+    |---|---|---|---|---|---|
+    | Inicial (parâmetros padrão) | 0,47 | 0,57 | 0,51 | 0,75 | 0,748 |
+    | Final (ajustado) | 0,43 | 0,57 | 0,49 | 0,72 | a calcular |
+
+    Como o recall, métrica priorizada na busca, ficou igual nos dois modelos e as demais métricas variaram pouco, o modelo ajustado foi o escolhido para o app, uma vez que a busca não trouxe um ganho claro.
+  
   ```text
   Iniciando a busca pela melhor calibração...
   Fitting 3 folds for each of 15 candidates, totalling 45 fits
