@@ -240,6 +240,7 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
      macro avg       0.64      0.67      0.65     22642
   weighted avg       0.76      0.72      0.74     22642
   ```
+---
 
 ## 🏆 O Produto Final: Simulador de Satisfação (Streamlit)
 
@@ -250,6 +251,9 @@ Para tornar real o valor do modelo e tirá-lo do ambiente de código, uma aplica
 https://github.com/user-attachments/assets/e32f57ec-aaba-4b69-9b82-f5bd2e2470b6
 
 
+### Como Funciona?:
+- O Streamlit atua como a interface visual que consome o modelo XGBoost treinado na Parte 3 (exportado no arquivo `modelo_olist_xgb.json`). A cada ajuste feito pelo usuário nos parâmetros, o aplicativo envia os novos dados para esse "cérebro",
+que realiza o cálculo matemático em milissegundos e devolve a probabilidade de insatisfação em tempo real. Isso comprova que é possível integrar Machine Learning preditivo e usabilidade de forma leve e responsiva.
 
 ### Principais Funcionalidades da Aplicação:
 - **Painel de Simulação (Barra Lateral):** O utilizador pode ajustar 11 parâmetros divididos de forma intuitiva em *Logística*, *Pedido* e *Anúncio/Produto*. O modelo atualiza a previsão em tempo real a cada alteração.
