@@ -207,7 +207,7 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
   | **Logística** | `tempo_entrega_dias` | Total de dias corridos entre a compra e a entrega ao cliente. |
   | | `dias_atraso` | Diferença em dias entre a data de entrega estimada e a data real. |
   | | `tempo_postagem_vendedor` | Tempo que o vendedor levou para despachar o produto após a aprovação da compra. |
-  | **Financeira** | `proporcao_frete` | Valor do frete em relação ao valor total do pedido. |
+  | **Financeira** | `proporcao_frete` | Valor do frete em relação ao valor do item. |
   | | `valor_total_pedido` | Soma do valor dos produtos e do frete. |
   | | `qtd_parcelas` | Número de parcelas escolhidas no momento do pagamento. |
   | **Produto/Anúncio**| `qtd_fotos` | Quantidade de imagens disponibilizadas no anúncio do produto. |
@@ -280,7 +280,7 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
     | Modelo | Precisão (insat.) | Recall (insat.) | F1 (insat.) | Acurácia | ROC-AUC |
     |---|---|---|---|---|---|
     | Inicial (parâmetros padrão) | 0,47 | 0,57 | 0,51 | 0,75 | 0,748 |
-    | Final (ajustado) | 0,43 | 0,57 | 0,49 | 0,72 | a calcular |
+    | Final (ajustado) | 0,43 | 0,57 | 0,49 | 0,72 | - |
 
     Como o recall, métrica priorizada na busca, ficou igual nos dois modelos e as demais métricas variaram pouco, o modelo ajustado foi o escolhido para o app, uma vez que a busca não trouxe um ganho claro.
   
