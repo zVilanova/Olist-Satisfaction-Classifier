@@ -1,10 +1,29 @@
 # 📦 Simulador de Satisfação do Cliente - Olist
 Este repositório conta a história do projeto estruturada em três atos: a análise da logística de entrega, a estimativa de prazos utilizando BigQuery ML e a previsão da satisfação do cliente com um modelo XGBoost. O projeto também conta com uma aplicação interativa que permite ao usuário ajustar os parâmetros da compra e observar, na prática, como cada variável afeta o risco de insatisfação.
 
-🔗 **App no ar:** _cole aqui o link do Streamlit_
+🔗 **App no ar:** [Clique aqui para abrir o aplicativo!](https://olist-satisfaction-classifier.streamlit.app/)
 
-<!-- ![App](docs/app.png) -->
+## 🎯 Resumo do Projeto: O que é, o que analisa e os resultados
 
+O objetivo principal deste projeto é responder a uma pergunta de grande valor para qualquer loja online: **"É possível saber se um cliente vai ficar insatisfeito com a compra antes mesmo de ele fazer uma reclamação?"**
+
+Para responder a isto, o projeto foi dividido em partes simples e fáceis de entender:
+
+* **1. O que analisamos?**
+  Olhamos para o histórico de mais de 100 mil compras reais feitas no Brasil entre 2016 e 2018, através de datasets da Olist. Analisamos cada detalhe da entrega: qual foi o valor do frete, quantos dias a encomenda demorou a chegar, se houve atraso e até o tamanho da descrição do produto. 
+
+* **2. O que descobrimos?**
+  Descobrimos que a satisfação do cliente está diretamente ligada à complexidade de entregar encomendas no Brasil. Por exemplo: verificamos que um cliente em São Paulo recebe a sua compra em cerca de 8 dias, enquanto um cliente em Roraima tem de esperar, em média, quase um mês. Esta espera, somada a fretes caros, é a receita principal para as avaliações negativas.
+
+* **3. A Inteligência Artificial**
+  Em vez de apenas olharmos para o passado, criámos um modelo de Inteligência Artificial para prever o futuro.
+  >**Exemplo prático:** Imagine que um cliente comprou um produto barato, mas pagou um frete muito caro e a encomenda atrasou 2 dias. O nosso modelo analisa este cenário e avisa: *"Atenção, existe um risco muito alto de este cliente deixar uma avaliação de 1 estrela"*. O modelo conseguiu prever corretamente a insatisfação em 3 de cada 4 pedidos reais.
+
+* **4. O Produto Final**
+  Para que qualquer pessoa possa utilizar esta inteligência sem precisar saber sobre programação ou matemática, criámos um **Simulador Interativo** (acessível no link acima). Nele, um gestor de atendimento pode simular qualquer venda, por exemplo, criar um cenário de "compra parcelada com 5 dias de atraso" e ter instantaneamente uma interface que dita se o cliente vai ficar feliz ou frustrado.
+
+**O Valor para o Negócio:**
+Com este projeto, provamos que uma equipa de atendimento já não precisa trabalhar de forma reativa (pedindo desculpa *depois* de o cliente reclamar). Com a nossa aplicação, a loja consegue antecipar o problema e, por exemplo, enviar um cupom de desconto no momento em que a encomenda atrasa, salvando a experiência de compra!
 
 ---
 
@@ -226,7 +245,11 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
 
 Para tornar real o valor do modelo e tirá-lo do ambiente de código, uma aplicação web interativa foi criada utilizando o framework **Streamlit**. O objetivo foi criar uma ferramenta em que gestores e analistas de atendimento possam simular cenários e tomar decisões sem precisarem saber programar.
 
-<!-- ![Demonstração do App](docs/app.gif) -->
+
+
+https://github.com/user-attachments/assets/e32f57ec-aaba-4b69-9b82-f5bd2e2470b6
+
+
 
 ### Principais Funcionalidades da Aplicação:
 - **Painel de Simulação (Barra Lateral):** O utilizador pode ajustar 11 parâmetros divididos de forma intuitiva em *Logística*, *Pedido* e *Anúncio/Produto*. O modelo atualiza a previsão em tempo real a cada alteração.
