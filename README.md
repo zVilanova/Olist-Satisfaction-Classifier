@@ -1,30 +1,65 @@
 # 📦 Simulador de Satisfação do Cliente - Olist
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/pandas-150458?style=flat&logo=pandas&logoColor=white)
+![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=flat&logo=kaggle&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat&logo=scikitlearn&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-0B7A75?style=flat)
+![SHAP](https://img.shields.io/badge/SHAP-4B5563?style=flat)
+![BigQuery ML](https://img.shields.io/badge/BigQuery_ML-669DF6?style=flat&logo=googlebigquery&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-7A76FF?style=flat&logo=plotly&logoColor=white)  
 Este repositório conta a história do projeto estruturada em três atos: a análise da logística de entrega, a estimativa de prazos utilizando BigQuery ML e a previsão da satisfação do cliente com um modelo XGBoost. O projeto também conta com uma aplicação interativa que permite ao usuário ajustar os parâmetros da compra e observar, na prática, como cada variável afeta o risco de insatisfação.
 
 🔗 **App no ar:** [Clique aqui para abrir o aplicativo!](https://olist-satisfaction-classifier.streamlit.app/)
+
+| Etapa | Pergunta | Ferramenta | Resultado |
+|---|---|---|---|
+| **1** | Quanto tempo a entrega leva em cada estado? | Python · Pandas | SP: **8,3 dias** × RR: **29,0 dias** |
+| **2** | Dá para prever o prazo só com estado (UF) e mês? | BigQuery ML · Regressão Linear | **R² ~0,24**, **MAE 5,3 dias** |
+| **3** | Dá para identificar pedidos com risco de insatisfação? | XGBoost · SHAP | **Recall 57%** · **Precisão 43%** · **Acurácia 72%** |
+| **4** | Como explorar o modelo sem programar? | Streamlit | Simulador com cenários e explicação por pedido |
+> **Só tem um minuto?** Veja a tabela acima e abra o app.  
+> **Quer entender o método?** Siga as Partes 1 a 3.
+
+## 🧭 Sumário
+
+- [🎯 Resumo do projeto](#-resumo-do-projeto-o-que-é-o-que-analisa-e-os-resultados)
+- [🎲 Contexto e dados](#-contexto-e-dados)
+- [Parte 1 · Prazo de entrega por estado](#parte-1--quanto-tempo-o-pedido-leva-para-chegar-em-cada-estado)
+- [Parte 2 · Previsão de prazo com BigQuery ML](#parte-2-bqml--é-possível-prever-quantos-dias-um-pedido-demorará-a-chegar-com-base-na-sua-localização-e-sazonalidade)
+- [Parte 3 · Previsão de satisfação com XGBoost](#parte-3-xgboost--como-antecipar-a-insatisfação-do-cliente-antes-mesmo-dele-avaliar-a-compra)
+- [🏆 O produto final: simulador em Streamlit](#-o-produto-final-simulador-de-satisfação-streamlit)
 
 ## 🎯 Resumo do Projeto: O que é, o que analisa e os resultados
 
 O objetivo principal deste projeto é responder a uma pergunta de grande valor para qualquer loja online: **"É possível saber se um cliente vai ficar insatisfeito com a compra antes mesmo de ele fazer uma reclamação?"**
 
-Para responder a isto, o projeto foi dividido em partes simples e fáceis de entender:
+Para responder a isso, o projeto foi dividido em partes simples e fáceis de entender:
 
 * **1. O que analisamos?**
-  Olhamos para o histórico de mais de 100 mil compras reais feitas no Brasil entre 2016 e 2018, através de datasets da Olist. Analisamos cada detalhe da entrega: qual foi o valor do frete, quantos dias a encomenda demorou a chegar, se houve atraso e até o tamanho da descrição do produto. 
+  Olhamos para o histórico de mais de 100 mil compras reais feitas no Brasil entre 2016 e 2018, através de datasets da Olist. Analisamos cada detalhe da entrega: qual foi o valor do frete, quantos dias a encomenda demorou para chegar, se houve atraso e até o tamanho da descrição do produto. 
 
 * **2. O que descobrimos?**
-  Descobrimos que a satisfação do cliente está diretamente ligada à complexidade de entregar encomendas no Brasil. Por exemplo: verificamos que um cliente em São Paulo recebe a sua compra em cerca de 8 dias, enquanto um cliente em Roraima tem de esperar, em média, quase um mês. Esta espera, somada a fretes caros, é a receita principal para as avaliações negativas.
+    Descobrimos que o prazo de entrega varia muito pelo país: por exemplo, um cliente em São Paulo recebe a compra em cerca de 8 dias, enquanto um cliente em Roraima precisa esperar, em média, quase um mês. No modelo de satisfação, os fatores de logística, em especial o atraso, estão entre os que mais pesam na previsão de insatisfação.
 
 * **3. A Inteligência Artificial**
-  Em vez de apenas olharmos para o passado, criámos um modelo de Inteligência Artificial para prever o futuro.
-  >**Exemplo prático:** Imagine que um cliente comprou um produto barato, mas pagou um frete muito caro e a encomenda atrasou 2 dias. O nosso modelo analisa este cenário e avisa: *"Atenção, existe um risco muito alto de este cliente deixar uma avaliação de 1 estrela"*. O modelo conseguiu prever corretamente a insatisfação em 3 de cada 4 pedidos reais.
+  Em vez de apenas olhar para o passado, criamos um modelo de Inteligência Artificial para estimar o risco de insatisfação.
+  > **Exemplo prático:** Imagine um pedido de um produto barato, com frete caro, que chegou com atraso. Logo após a entrega, o modelo sinaliza risco alto de o cliente dar nota 3 ou menos (classificado como insatisfeito).
+  > Nos dados de teste, o modelo acerta o sentimento em cerca de 7 de cada 10 pedidos (Acurácia) e identifica 57% dos clientes que ficaram insatisfeitos.
 
 * **4. O Produto Final**
-  Para que qualquer pessoa possa utilizar esta inteligência sem precisar saber sobre programação ou matemática, criámos um **Simulador Interativo** (acessível no link acima). Nele, um gestor de atendimento pode simular qualquer venda, por exemplo, criar um cenário de "compra parcelada com 5 dias de atraso" e ter instantaneamente uma interface que dita se o cliente vai ficar feliz ou frustrado.
+  Para que qualquer pessoa possa utilizar essa inteligência sem precisar saber sobre programação ou matemática, criamos um **Simulador Interativo** (acessível no link acima). Nele, um gestor de atendimento pode simular qualquer venda, por exemplo, criar um cenário de "compra parcelada com 5 dias de atraso" e ver na hora o risco estimado de o cliente ficar insatisfeito.
 
 **O Valor para o Negócio:**
-Com este projeto, provamos que uma equipa de atendimento já não precisa trabalhar de forma reativa (pedindo desculpa *depois* de o cliente reclamar). Com a nossa aplicação, a loja consegue antecipar o problema e, por exemplo, enviar um cupom de desconto no momento em que a encomenda atrasa, salvando a experiência de compra!
+O modelo não substitui o atendimento: ele ajuda a priorizá-lo. Depois que o pedido é entregue e antes de o cliente avaliar, a equipe pode usar a previsão para identificar os pedidos com maior risco de insatisfação e abordá-los primeiro, com uma mensagem de acompanhamento ou um cupom, por exemplo. O modelo encontra 57% dos clientes que ficariam insatisfeitos (recall), mas só cerca de 4 em cada 10 alertas correspondem a clientes realmente insatisfeitos (precisão de 43%). Por isso, as ações devem ser de baixo custo, já que parte dos alertas será falso alarme. O projeto não mede o impacto dessas ações, mas mostra que o risco pode ser estimado com as informações disponíveis logo após a entrega.
 
+**⚠️ Limitações**
+
+- **Uso após a entrega:** tempo de entrega e dias de atraso só existem depois que o pedido chega. O modelo estima o risco depois da entrega e antes da avaliação, não no momento da compra.
+- **Desempenho moderado:** Recall de 57% e Precisão de 43%. Serve para priorizar o atendimento, não para decidir sozinho.
+- **Correlação, não causalidade:** o modelo aprende padrões dos dados de 2016 a 2018.
+- **Base com linhas repetidas por pedido:** um mesmo pedido pode aparecer mais de uma vez (item e pagamento) e a divisão treino/teste foi aleatória, o que pode deixar as métricas um pouco otimistas.
 ---
 
 ## 🎲 Contexto e Dados
@@ -34,8 +69,11 @@ Base: [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/data
 Este dataset reúne dados anonimizados de aproximadamente 100 mil pedidos realizados no Brasil entre 2016 e 2018 por meio da Olist, uma plataforma de e-commerce que conecta pequenos lojistas a diferentes marketplaces.
 Os dados são provenientes de informações comerciais reais, porém foram anonimizados para preservar a privacidade dos envolvidos, informações que poderiam identificar empresas e parceiros presentes nos textos das avaliações foram substituídas por nomes de casas de **Game of Thrones**.  
 
+<details>
+<summary> Tabelas utilizadas e esquema do dataset </summary>
+
 ### Esquema
-![Data-Schema](https://i.imgur.com/HRhd2Y0.png)
+![Data-Schema](docs/schemaDB.png)
 
 No projeto, foram utilizadas 7 tabelas: 
   - `olist_orders_dataset`
@@ -48,6 +86,8 @@ No projeto, foram utilizadas 7 tabelas:
 
 Elas representam dados sobre pedidos, clientes, pagamentos, avaliações, itens, produtos e vendedores.
 
+</details>
+
 ---
 
 ## Parte 1 · Quanto tempo o pedido leva para chegar em cada estado?
@@ -59,13 +99,13 @@ Elas representam dados sobre pedidos, clientes, pagamentos, avaliações, itens,
 ![Tempo médio por estado](docs/tempo_medio_por_estado_barras.png)
 ![Mapa](docs/tempo_medio_entrega_mapa.png)
 
-* **Interpretação:** A discrepância de prazos reflete a infraestrutura logística brasileira. Os grandes centros de distribuição e a maioria dos vendedores concentram-se nas regiões Sul e Sudeste,
-o que barateia e acelera o frete para essas áreas. A região Centro-Oeste apresenta tempos intermediários. Em contrapartida, os estados do Norte (como RR, AP e AM) e Nordeste são geograficamente
-mais distantes dos centros logísticos e enfrentam desafios de infraestrutura (como o transporte através da bacia amazônica), resultando em prazos até três vezes maiores.
+* **Interpretação:** A diferença de prazos é grande: a entrega em Roraima leva mais de três vezes o tempo de São Paulo, e o Centro-Oeste apresenta tempos intermediários. Uma hipótese é que os centros de distribuição e a maioria dos vendedores estejam concentrados no Sul e Sudeste, o que acelera e barateia o frete nessas regiões, enquanto os estados do Norte (como RR, AP e AM) e do Nordeste ficam mais distantes desses centros e podem enfrentar desafios de infraestrutura, como o transporte pela bacia amazônica. Os dados mostram o padrão, mas não testam essas causas.
 
 
-
-### Código (`notebooks/01_analise_logistica.py`)
+<details>
+<summary> Como o tempo de entrega foi calculado </summary>
+  
+### Código (`scripts/01_analise_logistica.py`)
 
 * **Arquivos e Variáveis:**
   - `olist_orders_dataset` (`order_status`, `order_purchase_timestamp`, `order_delivered_customer_date`)
@@ -74,19 +114,26 @@ mais distantes dos centros logísticos e enfrentam desafios de infraestrutura (c
 * **Cálculo Realizado:** O tempo de entrega foi obtido pela subtração da data de compra com a data de entrega efetiva (`dt.days`). Em seguida, os dados foram agrupados por estado (`customer_state`)
 calculando-se a média (`mean`) de dias, ordenada de forma crescente.
 
+</details>
+
 ---
 
 ## Parte 2 (BQML) · É possível prever quantos dias um pedido demorará a chegar com base na sua localização e sazonalidade?
-- **Objetivo de Negócio:** Prever a quantidade de dias necessários para a entrega de um pedido, utilizando o estado de destino e a sazonalidade (mês da compra) como variáveis preditoras em um modelo de Machine Learning no Big Query (BQML).
+- **Objetivo de Negócio:** Prever a quantidade de dias necessários para a entrega de um pedido, utilizando o estado de destino e a sazonalidade (mês da compra) como variáveis preditoras em um modelo de Machine Learning no BigQuery (BQML).
 - **Metodologia:** Os dados históricos foram exportados para o Google Cloud Platform (BigQuery ML). Foi optado pelo treinamento de um modelo de Regressão Linear, adequado para a previsão de variáveis contínuas. A variável `mes_compra` foi convertida em texto (STRING) para garantir que o algoritmo a interpretasse como um fator categórico de sazonalidade via One-Hot Encoding.  
 
+<details>
+<summary> Como funciona a regressão linear do BQML? </summary>
+  
 ### **Como funciona o Modelo?**
 - O BQML utiliza a Regressão Linear para prever um valor numérico com base em outras informações. Você fornece ao modelo os dados históricos, indicando quais são as variáveis que podem ajudar na previsão (features)
 e qual é o valor que você quer prever (label), ele analisa esses dados e encontra uma relação matemática entre as variáveis de entrada e o resultado. Depois de treinado, você fornece novos dados e ele retorna uma previsão numérica.
 
+</details>
+
 #### A metodologia do projeto foi dividida em 4 etapas para criação e avaliação do modelo:
 
-- **Etapa 1 - Dataset de Exportação (`notebooks/02_preparacao_dados_bq.py`):**  
+- **Etapa 1 - Dataset de Exportação (`scripts/02_preparacao_dados_bq.py`):**  
 A partir do dataset original no Pandas, as colunas de estado de destino e tempo de entrega foram isoladas, e uma nova variável preditora de sazonalidade (mês da compra) foi gerada.
 Para garantir o rigor estatístico e evitar que o algoritmo apenas memorize os dados (Overfitting), a base limpa foi dividida aleatoriamente utilizando a biblioteca scikit-learn:
 
@@ -113,8 +160,8 @@ A função _ML.EVALUATE_ testa a precisão do modelo comparando suas previsões 
 
   - **Resultado Etapa 3:**
   O modelo obteve um `Erro Médio Absoluto (MAE)` de 5.33 dias e um `R²` de 0.2398.
-  Isso indica que a geografia e a sazonalidade explicam 23,9% das variações no tempo de entrega.
-  É uma base sólida que atesta a complexidade logística do Brasil, evidenciando que variáveis adicionais (como origem do vendedor e dimensões do pacote) são necessárias para zerar o erro residual numa futura versão de produção.  
+  Isso indica que a geografia e a sazonalidade explicam cerca de 24% das variações no tempo de entrega, e que a previsão erra, em média, mais de 5 dias.
+  É um resultado modesto: serve como **ponto de partida (baseline)** e mostra que localização e sazonalidade, sozinhas, não bastam. Variáveis como origem do vendedor e dimensões do pacote são candidatas a reduzir esse erro, e a Parte 3 passa a utilizá-las, agora para prever a satisfação.  
 
     ```json
     [{
@@ -127,12 +174,12 @@ A função _ML.EVALUATE_ testa a precisão do modelo comparando suas previsões 
     }]
     ```
 - **Etapa 4: Inferência (`queries/02_previsao_prazos_bqml.sql`) -  _FUNÇÃO ML.PREDICT_:**  
-A função _ML.PREDICT_ representa o ambiente de produção. Ela aplica os padrões aprendidos a novas transações, gerando automaticamente uma coluna de previsão `predicted_tempo_entrega_dias`, ela foi aplicada sobre a base de teste para prever o prazo de entrega linha a linha. O resultado foi exportado de volta para o ambiente Python, permitindo a plotagem de um gráfico comparativo entre o valor real e a estimativa do BigQuery.
+A função _ML.PREDICT_ aplica o modelo treinado a novos dados. Ela aplica os padrões aprendidos a novas transações, gerando automaticamente uma coluna de previsão `predicted_tempo_entrega_dias`, ela foi aplicada sobre a base de teste para prever o prazo de entrega linha a linha. O resultado foi exportado de volta para o ambiente Python, permitindo a plotagem de um gráfico comparativo entre o valor real e a estimativa do BigQuery.
 
 ### **Resultado Etapa 4:**  
 ![BQML](docs/previsão_bqml.png)
 
-- **Interpretação:** A visualização por Estados (UF) revela a verdadeira performance do modelo. Para as rotas de alto volume e infraestrutura consolidada (Sul, Sudeste e Centro-Oeste), a IA previu os prazos com altíssima precisão. Em contrapartida, o modelo subestimou severamente os tempos de entrega para a região Norte (RR, AM, AC). Essa discrepância indica que os gargalos logísticos dessas áreas envolvem variáveis complexas (como dependência de transporte fluvial) que o algoritmo não consegue capturar apenas com o histórico de datas e estados, exigindo outras features adicionais.
+- **Interpretação:** A comparação por estado (UF) mostra onde o modelo funciona melhor e pior. Nas regiões Sul, Sudeste e Centro-Oeste, as previsões ficaram mais próximas do prazo real. Na região Norte (RR, AM, AC), o modelo subestimou os prazos de forma consistente. Uma hipótese é que nessas áreas pesem fatores que o modelo não enxerga, como a distância até o vendedor e o tipo de transporte (fluvial, por exemplo), mas isso não foi testado aqui. Com apenas estado e mês, o modelo não tem como capturar essas diferenças, exigindo outras features adicionais.
   
 ---
 
@@ -140,14 +187,19 @@ A função _ML.PREDICT_ representa o ambiente de produção. Ela aplica os padr�
 - **Objetivo de Negócio:** Avaliar simultaneamente múltiplos parâmetros da jornada de compra (como tempo total de entrega, dias de atraso, características do anúncio etc.) para identificar e ranquear quais variáveis mais influenciam a nota de avaliação (1 a 5 estrelas) dada pelo consumidor, direcionando os esforços de melhoria da empresa.  
 - **Metodologia:** Foi construído um modelo de Classificação Binária utilizando **XGBoost (Extreme Gradient Boosting)** no Python. O XGBoost foi escolhido por ser um dos algoritmos mais potentes para dados tabulares, lidando muito bem com relações não lineares e dados complexos. A variável alvo (Target) foi criada a partir da nota da avaliação (`review_score`), classificando os pedidos em "Satisfeito" (notas altas) e "Insatisfeito" (notas baixas).
 
+<details>
+<summary> Como funciona o XGBoost? </summary>
+
 ### **Como funciona o Modelo?**  
 Diferente da regressão linear da Parte 2, o XGBoost cria um "conjunto de árvores de decisão". Ele avalia o pedido fazendo diversas perguntas em sequência (ex: "O pedido atrasou?", "O frete foi mais caro que o produto?", "Foram comprados muitos itens?"). 
   - **O que é uma Árvore de Decisão?** Imagine um fluxograma de perguntas e respostas. O modelo avalia o pedido fazendo divisões lógicas sequenciais. A primeira "ramificação" pode ser: *"O pedido atrasou?"*. Se a resposta for sim, ele segue por um caminho; se não, segue por outro. Em seguida, pode perguntar: *"O frete custou mais de 20% do valor do produto?"*. Ele continua fazendo essas perguntas até chegar a uma conclusão, que é a classificação final: Satisfeito ou Insatisfeito.
   - **A Lógica do _Gradient Boosting_:** Ele não cria apenas uma árvore, mas sim centenas delas de forma sequencial. Cada nova árvore é treinada com o objetivo específico de **corrigir os erros** cometidos pelas árvores anteriores. É como uma equipe onde cada novo membro foca exclusivamente em consertar os pontos cegos dos anteriores, resultando em um modelo final de altíssima precisão.
 
+</details>
+
 #### A metodologia do projeto foi dividida em 3 etapas para criação e avaliação do modelo:
 
-- **Etapa 1: Engenharia de Features e Preparação da Base (`notebooks/03_treinamento_xgboost.py`)**  
+- **Etapa 1: Engenharia de Features e Preparação da Base (`scripts/03_treinamento_xgboost.py`)**  
 A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não representam todo o cenário. Para suprir essa lacuna e prever o sentimento do cliente com precisão, novas variáveis preditoras foram geradas para capturar as complexidades logísticas e comerciais. A partir dos datasets originais no Pandas, foi realizado o cruzamento de dados (JOIN) para consolidar a jornada de compra em uma única base, as features criadas são:   
 
   | Categoria | Variável | Descrição |
@@ -171,7 +223,7 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
       
   Esses subconjuntos foram mantidos no ambiente Python (Pandas) para alimentar diretamente o algoritmo XGBoost nas etapas seguintes.
 
-- **Etapa 2: Preparação da Matriz de Preditoras e Variável Alvo (`notebooks/03_treinamento_xgboost.py`)**  
+- **Etapa 2: Preparação da Matriz de Preditoras e Variável Alvo (`scripts/03_treinamento_xgboost.py`)**  
   Agora, com as variáveis de engenharia de features criadas, nesta etapa, estruturamos os dados tabulares em duas matrizes distintas para alimentar o algoritmo de Machine Learning de forma supervisionada:  
   - **Matriz de Preditoras ( X ):** Agrupa as 11 variáveis de engenharia de features construídas.
   - **Variável Alvo ( y ):** Isola a coluna `review_score` (nota de avaliação do cliente), atuando como o gabarito que o modelo utilizará para associar o comportamento logístico e estrutural à satisfação final.
@@ -199,7 +251,7 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
     - **Identificação de Clientes em Risco (Classe 0):** O modelo possui um *Recall* de 57% para a classe minoritária. Em termos de negócio, a empresa consegue interceptar proativamente quase 60% dos clientes que teriam       uma experiência ruim antes mesmo deles registrarem a reclamação.
     - **ROC-AUC:** A pontuação de ~75% indica uma capacidade sólida de distinguir os padrões lógicos que diferenciam um cliente promotor de um detrator.
 
-- **Etapa 3: Explicabilidade do Modelo com SHAP Values (`notebooks/03_treinamento_xgboost.py`)**  
+- **Etapa 3: Explicabilidade do Modelo com SHAP Values (`scripts/03_treinamento_xgboost.py`)**  
   Modelos baseados em árvores (como o XGBoost) costumam ser vistos como "caixas pretas". Para que o time de negócios confiasse nas previsões, utilizamos a biblioteca **SHAP (Shapley Additive explanations)**, baseada na Teoria dos Jogos, para explicar como cada variável afeta a probabilidade de um cliente ficar insatisfeito.
 
     - **1. SHAP Summary Plot (Visão Global):**  
@@ -214,9 +266,10 @@ A Parte 2 evidenciou que a localização e a sazonalidade, sozinhas, não repres
       _**Nota sobre o gráfico:** O padrão de cores do SHAP pode parecer contraintuitivo à primeira vista. As barras **vermelhas** significam que a variável teve um impacto positivo no valor numérico (empurrando a previsão para cima), enquanto as barras **azuis** indicam que a variável puxou o valor para baixo._
       
       ![SHAP Waterfall](docs/exemplo_individual.png)  
-      > **💡 Como a área de CX usa isso?** O gráfico explica o "porquê" por trás da nota. Neste exemplo real, o modelo indica que o cliente ficará **Satisfeito** (score final de 0.71). Por qual motivo? A equipa consegue ver que a logística foi impecável: o pedido foi entregue em apenas 5 dias (o que aumentou a chance de satisfação em +0.35) e chegou 5 dias antes do prazo prometido (`dias_atraso` = -5, somando +0.14). Essa rapidez foi o fator decisivo para a boa experiência, compensando até mesmo o alto valor do frete (62,2% da compra).
+      > **💡 Como a área de CX usa isso?** O gráfico explica o "porquê" por trás da previsão. Neste exemplo real, o modelo indica que o cliente ficará **Satisfeito**. A logística pesou a favor: o pedido foi entregue em apenas 5 dias (contribuição de +0,35) e chegou 5 dias antes do prazo prometido (`dias_atraso` = -5, +0,14), apesar do frete alto (62,2% do preço do produto).
+      > *Os valores do gráfico estão na escala interna do modelo (log-odds), não em pontos percentuais: um resultado final de 0,71 corresponde a cerca de 67% de probabilidade de satisfação.*
 
-- **Etapa 4: Otimização de Hiperparâmetros (Fine-Tuning) - (`notebooks/03_treinamento_xgboost.py`)**  
+- **Etapa 4: Otimização de Hiperparâmetros (Fine-Tuning) - (`scripts/03_treinamento_xgboost.py`)**  
     Após a avaliação inicial e a extração dos insights com o SHAP, realizamos um ajuste fino no "motor" do XGBoost para garantir que o modelo não sofresse de *overfitting* (decorar os dados de treino) e conseguisse generalizar de forma segura em produção.
     Avaliamos diferentes combinações matemáticas utilizando técnicas de busca (`RandomizedSearchCV`), ajustando parâmetros cruciais como `max_depth`, `learning_rate` e `n_estimators`.
     - `max_depth`: Controlando a profundidade máxima das árvores para evitar que o modelo ficasse excessivamente complexo
@@ -256,7 +309,7 @@ https://github.com/user-attachments/assets/e32f57ec-aaba-4b69-9b82-f5bd2e2470b6
 que realiza o cálculo matemático em milissegundos e devolve a probabilidade de insatisfação em tempo real. Isso comprova que é possível integrar Machine Learning preditivo e usabilidade de forma leve e responsiva.
 
 ### Principais Funcionalidades da Aplicação:
-- **Painel de Simulação (Barra Lateral):** O utilizador pode ajustar 11 parâmetros divididos de forma intuitiva em *Logística*, *Pedido* e *Anúncio/Produto*. O modelo atualiza a previsão em tempo real a cada alteração.
+- **Painel de Simulação (Barra Lateral):** O usuário pode ajustar 11 parâmetros divididos de forma intuitiva em *Logística*, *Pedido* e *Anúncio/Produto*. O modelo atualiza a previsão em tempo real a cada alteração.
 - **Cenários Prontos (Presets):** Para facilitar a análise, a aplicação conta com botões de atalho para cenários comuns, como *"Pedido ideal"*, *"Entrega atrasada"*, *"Compra parcelada"* e *"Anúncio fraco"*.
 - **Medidor de Risco:** O output principal é um gráfico estilo *gauge* (velocímetro) que converte a probabilidade do modelo num Veredito de Risco de Insatisfação classificado em três níveis:
   - **Baixo** (Verde)
