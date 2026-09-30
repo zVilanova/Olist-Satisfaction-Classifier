@@ -1,0 +1,14 @@
+# Ambiente e cache
+venv/
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+
+# Segredos (nunca versionar)
+.env
+.streamlit/secrets.toml
+
+# Dados brutos e gerados: baixe do Kaggle, não suba para o repositório
+*.csv
+*.sqlite
