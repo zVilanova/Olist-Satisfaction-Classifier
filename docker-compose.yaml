@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  airflow:
+    image: apache/airflow:2.7.2-python3.10
+    container_name: airflow_olist
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    command: standalone
