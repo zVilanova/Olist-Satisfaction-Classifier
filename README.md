@@ -13,29 +13,31 @@
 
 Plataforma de dados e Machine Learning de ponta a ponta que estima o **risco de insatisfação de clientes de e-commerce** (dados públicos da Olist). O projeto cobre todo o ciclo: **ingestão** a partir do Kaggle, **Data Warehouse em camadas** (bronze, silver e gold) no BigQuery transformado com **dbt**, **treinamento** de um modelo XGBoost orquestrado por **Apache Airflow** em contêineres **Docker**, e **inferência online** em uma aplicação **Streamlit**.
 
-🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-class.streamlit.app/)
+🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-classifier.streamlit.app/)
 
-> **Só tem um minuto?** Veja o [diagrama de ponta a ponta](#-arquitetura-de-ponta-a-ponta) e abra o app.  
-> **Quer ver a pesquisa que originou o projeto?** Veja [Origem do projeto](#-origem-do-projeto).
+> **Só tem um minuto?** Veja o [diagrama de ponta a ponta](#arquitetura) e abra o app.  
+> **Quer ver a pesquisa que originou o projeto?** Veja [Origem do projeto](#origem).
 
 ## Sumário
 
-- [🎯 Visão geral](#-visão-geral)
-- [🧱 Arquitetura de ponta a ponta](#-arquitetura-de-ponta-a-ponta)
-- [📁 Estrutura do repositório](#-estrutura-do-repositório)
-- [📥 Ingestão (Bronze)](#-ingestão-bronze)
-- [🔄 Transformação (dbt)](#-transformação-dbt)
-- [🧠 Treinamento (ML)](#-treinamento-ml)
-- [📈 Desempenho do modelo](#-desempenho-do-modelo)
-- [🐳 Orquestração e contêineres](#-orquestração-e-contêineres)
-- [🌉 Contrato de artefatos](#-contrato-de-artefatos)
-- [📊 Aplicação (Streamlit)](#-aplicação-streamlit)
-- [🧭 Decisões de arquitetura](#-decisões-de-arquitetura)
-- [🔑 Configuração](#-configuração)
-- [🚧 Limitações conhecidas](#-limitações-conhecidas)
-- [📚 Origem do projeto](#-origem-do-projeto)
+- [🎯 Visão geral](#visao-geral)
+- [🧱 Arquitetura de ponta a ponta](#arquitetura)
+- [📁 Estrutura do repositório](#estrutura)
+- [📥 Ingestão (Bronze)](#ingestao)
+- [🔄 Transformação (dbt)](#transformacao)
+- [🧠 Treinamento (ML)](#treinamento)
+- [📈 Desempenho do modelo](#desempenho)
+- [🐳 Orquestração e contêineres](#orquestracao)
+- [🌉 Contrato de artefatos](#artefatos)
+- [📊 Aplicação (Streamlit)](#aplicacao)
+- [🧭 Decisões de arquitetura](#decisoes)
+- [🔑 Configuração](#configuracao)
+- [🚧 Limitações conhecidas](#limitacoes)
+- [📚 Origem do projeto](#origem)
 
 ---
+
+<a id="visao-geral"></a>
 
 ## 🎯 Visão geral
 
@@ -56,47 +58,41 @@ Plataforma de dados e Machine Learning de ponta a ponta que estima o **risco de 
 
 ---
 
+<a id="arquitetura"></a>
+
 ## 🧱 Arquitetura de ponta a ponta
 
 ```mermaid
 flowchart TB
-    KG["Kaggle<br/>olistbr/brazilian-ecommerce"]
+    KG["Kaggle"]
 
-    subgraph ING["1 · Ingestão · src/ingestion_bronze.py"]
-        direction TB
-        TMP["Diretório temporário<br/>download e unzip dos CSVs"]
-        PQ["Conversão CSV para Parquet<br/>pandas + pyarrow"]
-        TMP --> PQ
+    subgraph ING["1 · Ingestão"]
+        direction LR
+        TMP["Download"] --> PQ["Parquet"]
     end
 
-    subgraph DW["2 · BigQuery · transformação com dbt"]
-        direction TB
-        BRZ[("olist_bronze<br/>9 tabelas brutas")]
-        STG[("olist_staging<br/>7 views tipadas")]
-        SLV[("olist_silver<br/>7 tabelas limpas")]
-        GLD[("olist_gold<br/>ft_satisfacao_cliente")]
-        BRZ --> STG --> SLV --> GLD
+    subgraph DW["2 · BigQuery + dbt"]
+        direction LR
+        BRZ[("bronze")] --> STG[("staging")] --> SLV[("silver")] --> GLD[("gold")]
     end
 
-    subgraph TRN["3 · Treinamento · Airflow + Docker"]
-        direction TB
-        AF["Airflow DAG<br/>olist_ml_pipeline"]
-        CTR["Contêiner efêmero<br/>python ml/train.py"]
-        AF -->|DockerOperator| CTR
+    subgraph TRN["3 · Treinamento"]
+        direction LR
+        AF["Airflow"] --> CTR["Contêiner"]
     end
 
-    ART["artifacts/<br/>modelo_olist_xgb_baseline.json"]
+    ART["artifacts/<br/>modelo .json"]
 
-    subgraph SRV["4 · Serviço · Streamlit Community Cloud"]
-        APP["streamlit/app.py"]
+    subgraph SRV["4 · Serviço"]
+        APP["Streamlit"]
     end
 
-    KG -->|Kaggle API| TMP
-    PQ -->|"load job Parquet · WRITE_TRUNCATE"| BRZ
-    GLD -->|"SELECT *"| CTR
-    CTR -->|salva o modelo| ART
-    ART -->|lido pelo app| APP
-    APP --> USR(["Usuário"])
+    KG --> ING
+    ING -->|load| DW
+    DW -->|SELECT| TRN
+    TRN --> ART
+    ART --> SRV
+    SRV --> USR(["Usuário"])
 ```
 
 O sistema segue dois princípios:
@@ -105,6 +101,8 @@ O sistema segue dois princípios:
 - **Desacoplamento entre treino e serviço:** a parte pesada roda em lote e de forma invisível (a "fábrica"); a parte que o usuário enxerga fica leve e disponível 24/7 (a "loja"). A única ligação entre elas é um arquivo de modelo.
 
 ---
+
+<a id="estrutura"></a>
 
 ## 📁 Estrutura do repositório
 
@@ -147,6 +145,8 @@ O sistema segue dois princípios:
 
 ---
 
+<a id="ingestao"></a>
+
 ## 📥 Ingestão (Bronze)
 
 **Arquivo:** `src/ingestion_bronze.py` · **Destino:** dataset `olist_bronze` no BigQuery
@@ -155,12 +155,7 @@ A ingestão baixa o dataset diretamente do Kaggle e o entrega ao BigQuery **sem 
 
 ```mermaid
 flowchart LR
-    A["Kaggle API<br/>autenticação via token"] --> B["Diretório temporário<br/>tempfile.TemporaryDirectory"]
-    B --> C["Download do ZIP<br/>e descompactação"]
-    C --> D["Para cada CSV:<br/>leitura com dtype=str"]
-    D --> E["Gravação em Parquet<br/>engine pyarrow"]
-    E --> F["Load job no BigQuery<br/>source_format=PARQUET"]
-    F --> G[("olist_bronze.tabela")]
+    A["Kaggle API"] --> B["Pasta temporária"] --> C["CSV"] --> D["Parquet"] --> E["Load job"] --> F[("bronze")]
 ```
 
 | Etapa | O que acontece |
@@ -175,6 +170,8 @@ flowchart LR
 **Resultado:** 9 tabelas **brutas**, todas em texto, fiéis à origem: `olist_customers`, `olist_geolocation`, `olist_order_items`, `olist_order_payments`, `olist_order_reviews`, `olist_orders`, `olist_products`, `olist_sellers` e `product_category_name_translation`. A tipagem é responsabilidade da camada seguinte.
 
 ---
+
+<a id="transformacao"></a>
 
 ## 🔄 Transformação (dbt)
 
@@ -231,6 +228,8 @@ Une pedidos, itens, avaliações, produtos, clientes, vendedores e pagamentos em
 
 ---
 
+<a id="treinamento"></a>
+
 ## 🧠 Treinamento (ML)
 
 **Pasta:** `ml/` · **Ponto de entrada:** `python ml/train.py`
@@ -248,21 +247,18 @@ O código de ML é dividido em módulos com responsabilidade única:
 
 ```mermaid
 flowchart LR
-    A[("olist_gold<br/>ft_satisfacao_cliente")] --> B["data_loader<br/>SELECT para DataFrame"]
-    B --> C["X: 11 features<br/>y: target_satisfeito"]
-    C --> D["train_test_split<br/>80/20 · estratificado · seed 42"]
-    D --> E["scale_pos_weight<br/>= qtd classe 0 / qtd classe 1"]
-    E --> F["XGBClassifier.fit"]
-    F --> G["save_model<br/>artifacts/*.json"]
-    F --> H["evaluate<br/>classification_report + ROC-AUC"]
+    A[("gold")] --> B["Carrega dados"] --> C["Split 80/20"] --> D["Peso de classe"] --> E["Treina XGBoost"] --> F["Salva modelo"]
+    E --> G["Métricas"]
 ```
 
 - **Divisão estratificada:** treino e teste mantêm a mesma proporção de satisfeitos e insatisfeitos.
 - **Desbalanceamento de classes:** o peso é calculado dinamicamente a cada treino (`scale_pos_weight` = classe 0 ÷ classe 1 no conjunto de treino), sem valor fixo no código. O modelo salvo hoje carrega o valor ≈ 0,30.
 - **Modelo baseline:** `XGBClassifier` (objetivo `binary:logistic`) com os hiperparâmetros padrão da biblioteca, 100 árvores, semente fixa e `eval_metric=logloss`.
-- **Avaliação:** a cada execução, o relatório de classificação (precisão, recall e F1 por classe) e o ROC-AUC na base de teste são impressos nos logs do contêiner, e portanto visíveis no log da tarefa no Airflow. Os resultados do modelo atual estão em [Desempenho do modelo](#-desempenho-do-modelo).
+- **Avaliação:** a cada execução, o relatório de classificação (precisão, recall e F1 por classe) e o ROC-AUC na base de teste são impressos nos logs do contêiner, e portanto visíveis no log da tarefa no Airflow. Os resultados do modelo atual estão em [Desempenho do modelo](#desempenho).
 
 ---
+
+<a id="desempenho"></a>
 
 ## 📈 Desempenho do modelo
 
@@ -302,6 +298,8 @@ ROC-AUC Score: 0.7357
 
 ---
 
+<a id="orquestracao"></a>
+
 ## 🐳 Orquestração e contêineres
 
 ### Componentes
@@ -330,28 +328,29 @@ ROC-AUC Score: 0.7357
 
 ```mermaid
 sequenceDiagram
-    participant S as Agendamento semanal
-    participant A as Airflow (airflow_olist)
-    participant D as Docker Engine
-    participant C as Contêiner de treino
-    participant B as BigQuery (olist_gold)
-    participant F as artifacts/
+    participant S as Agenda
+    participant A as Airflow
+    participant D as Docker
+    participant C as Treino
+    participant B as BigQuery
+    participant F as artifacts
 
-    S->>A: dispara a DAG olist_ml_pipeline
-    A->>D: DockerOperator via docker.sock
-    D->>C: cria o contêiner com as montagens
-    C->>B: lê ft_satisfacao_cliente
-    B-->>C: DataFrame de features
-    C->>C: split, treino XGBoost e métricas
-    C->>F: grava modelo_olist_xgb_baseline.json
-    C-->>D: encerra com sucesso
-    D-->>A: tarefa concluída
-    D->>D: auto_remove remove o contêiner
+    S->>A: dispara a DAG
+    A->>D: DockerOperator
+    D->>C: cria o contêiner
+    C->>B: lê a tabela gold
+    B-->>C: features
+    C->>C: treina e avalia
+    C->>F: salva o modelo
+    C-->>D: encerra
+    D->>D: remove o contêiner
 ```
 
 O Airflow não treina nada por conta própria: ele **comanda o Docker do host** (padrão *Docker-out-of-Docker*, via socket) para criar um contêiner irmão. Assim, o ambiente de treino é sempre o mesmo, definido pela imagem, e nenhum estado fica preso no contêiner depois da execução.
 
 ---
+
+<a id="artefatos"></a>
 
 ## 🌉 Contrato de artefatos
 
@@ -366,6 +365,8 @@ A pasta `artifacts/` é a **ponte** entre a fábrica (Airflow) e a loja (Streaml
 - **Validação do contrato:** ao iniciar, o app compara as features salvas dentro do modelo com as que ele próprio espera. Se divergirem, exibe um erro explícito em vez de gerar previsões incorretas. Se o arquivo não existir, orienta a executar o pipeline de treino.
 
 ---
+
+<a id="aplicacao"></a>
 
 ## 📊 Aplicação (Streamlit)
 
@@ -384,6 +385,8 @@ O app é a camada de serviço: **não treina, não acessa o BigQuery e não depe
 
 ---
 
+<a id="decisoes"></a>
+
 ## 🧭 Decisões de arquitetura
 
 | Decisão | Motivo |
@@ -401,6 +404,8 @@ O app é a camada de serviço: **não treina, não acessa o BigQuery e não depe
 
 ---
 
+<a id="configuracao"></a>
+
 ## 🔑 Configuração
 
 | Item | Onde | Uso |
@@ -414,6 +419,8 @@ O app é a camada de serviço: **não treina, não acessa o BigQuery e não depe
 
 ---
 
+<a id="limitacoes"></a>
+
 ## 🚧 Limitações conhecidas
 
 - **Escopo da DAG:** hoje o Airflow orquestra o estágio de **treinamento**. A ingestão (`src/ingestion_bronze.py`) e a transformação (`dbt`) são etapas executadas à parte, ainda fora da DAG.
@@ -425,6 +432,8 @@ O app é a camada de serviço: **não treina, não acessa o BigQuery e não depe
 - **Correlação, não causalidade:** o modelo aprende padrões dos dados de 2016 a 2018 e não mede o efeito de ações de mitigação.
 
 ---
+
+<a id="origem"></a>
 
 ## 📚 Origem do projeto
 
