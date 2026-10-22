@@ -1,35 +1,38 @@
 # 📦 Olist Satisfaction Classifier · MLOps em Produção
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-0B7A75?style=flat)
-![SHAP](https://img.shields.io/badge/SHAP-4B5563?style=flat)
+![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=flat&logo=kaggle&logoColor=white)
+![Apache Parquet](https://img.shields.io/badge/Parquet-50ABF1?style=flat&logo=apacheparquet&logoColor=white)
+![BigQuery](https://img.shields.io/badge/BigQuery-669DF6?style=flat&logo=googlebigquery&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?style=flat&logo=dbt&logoColor=white)
 ![Apache Airflow](https://img.shields.io/badge/Apache_Airflow-017CEE?style=flat&logo=apacheairflow&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
-![BigQuery](https://img.shields.io/badge/BigQuery-669DF6?style=flat&logo=googlebigquery&logoColor=white)
-![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-0B7A75?style=flat)
+![SHAP](https://img.shields.io/badge/SHAP-4B5563?style=flat)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat&logo=scikitlearn&logoColor=white)
-![Pandas](https://img.shields.io/badge/pandas-150458?style=flat&logo=pandas&logoColor=white)
 
-Sistema de Machine Learning em produção que estima o **risco de insatisfação de clientes de e-commerce** (dados da Olist) com um modelo **XGBoost**, sustentado por uma arquitetura desacoplada: o **treinamento em lote** é orquestrado pelo **Apache Airflow** em contêineres **Docker**, e a **inferência online** é servida por uma aplicação **Streamlit** que consome o modelo treinado por meio de um contrato de artefatos versionado.
+Plataforma de dados e Machine Learning de ponta a ponta que estima o **risco de insatisfação de clientes de e-commerce** (dados públicos da Olist). O projeto cobre todo o ciclo: **ingestão** a partir do Kaggle, **Data Warehouse em camadas** (bronze, silver e gold) no BigQuery transformado com **dbt**, **treinamento** de um modelo XGBoost orquestrado por **Apache Airflow** em contêineres **Docker**, e **inferência online** em uma aplicação **Streamlit**.
 
-🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-classifier.streamlit.app/)
+🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-class.streamlit.app/)
 
-> **Só tem um minuto?** Veja o [diagrama da arquitetura](#-arquitetura) e abra o app.  
-> **Quer reproduzir?** Vá direto para [Como reproduzir](#-como-reproduzir).  
-> **Quer ver a pesquisa por trás da engenharia?** Veja [Origem do projeto](#-origem-do-projeto) e o [histórico analítico completo](docs/HISTORICO_ANALITICO.md).
+> **Só tem um minuto?** Veja o [diagrama de ponta a ponta](#-arquitetura-de-ponta-a-ponta) e abra o app.  
+> **Quer ver a pesquisa que originou o projeto?** Veja [Origem do projeto](#-origem-do-projeto).
 
-## 🧭 Sumário
+## Sumário
 
 - [🎯 Visão geral](#-visão-geral)
-- [🏗️ Arquitetura](#️-arquitetura)
-- [⚙️ Componentes](#️-componentes)
-- [🗂️ Estrutura do repositório](#️-estrutura-do-repositório)
-- [🚀 Como reproduzir](#-como-reproduzir)
-- [📊 Desempenho do modelo](#-desempenho-do-modelo)
-- [🖥️ Aplicação (Streamlit)](#️-aplicação-streamlit)
-- [🔐 Segurança e governança](#-segurança-e-governança)
-- [⚠️ Limitações](#️-limitações)
+- [🧱 Arquitetura de ponta a ponta](#-arquitetura-de-ponta-a-ponta)
+- [📁 Estrutura do repositório](#-estrutura-do-repositório)
+- [📥 Ingestão (Bronze)](#-ingestão-bronze)
+- [🔄 Transformação (dbt)](#-transformação-dbt)
+- [🧠 Treinamento (ML)](#-treinamento-ml)
+- [📈 Desempenho do modelo](#-desempenho-do-modelo)
+- [🐳 Orquestração e contêineres](#-orquestração-e-contêineres)
+- [🌉 Contrato de artefatos](#-contrato-de-artefatos)
+- [📊 Aplicação (Streamlit)](#-aplicação-streamlit)
+- [🧭 Decisões de arquitetura](#-decisões-de-arquitetura)
+- [🔑 Configuração](#-configuração)
+- [🚧 Limitações conhecidas](#-limitações-conhecidas)
 - [📚 Origem do projeto](#-origem-do-projeto)
 
 ---
@@ -38,219 +41,397 @@ Sistema de Machine Learning em produção que estima o **risco de insatisfação
 
 **Problema de negócio:** é possível saber se um cliente ficará insatisfeito com a compra antes que ele registre uma reclamação?
 
-**Solução:** um classificador binário (XGBoost) treinado sobre mais de 100 mil pedidos reais da Olist (2016 a 2018). Classes: **Insatisfeito** (nota 1 a 3) e **Satisfeito** (nota 4 e 5). O modelo usa 11 variáveis de logística, pagamento, anúncio e geografia, disponíveis logo após a entrega do pedido.
+**Solução:** um classificador binário (XGBoost) treinado sobre os pedidos reais da Olist (2016 a 2018). Classes: **Insatisfeito** (nota 1 a 3) e **Satisfeito** (nota 4 e 5). O modelo usa **11 variáveis** de logística, pagamento, anúncio e geografia, disponíveis logo após a entrega do pedido.
 
-**Valor para o negócio:** o modelo não substitui o atendimento, ele o prioriza. Depois da entrega e antes da avaliação, a equipe pode abordar primeiro os pedidos de maior risco (mensagem de acompanhamento, cupom). Como a precisão é moderada, as ações devem ser de baixo custo.
+**Valor para o negócio:** o modelo não substitui o atendimento, ele o prioriza. Depois da entrega e antes da avaliação, a equipe pode abordar primeiro os pedidos de maior risco (mensagem de acompanhamento, cupom).
 
-**O que mudou nesta versão:** o projeto evoluiu de uma análise de dados com modelagem básica para uma **arquitetura de MLOps** que separa rigidamente o treinamento da inferência, com pipelines reprodutíveis, ambiente conteinerizado e governança de código.
+**Como o sistema está organizado:** quatro estágios desacoplados, cada um com uma responsabilidade e um ponto de entrega bem definido.
+
+| # | Estágio | Responsabilidade | Tecnologia | Entrega |
+|---|---|---|---|---|
+| 1 | **Ingestão** | Baixar o dataset e carregá-lo cru no Data Warehouse | Kaggle API · pandas · Parquet | Dataset `olist_bronze` no BigQuery |
+| 2 | **Transformação** | Limpar, modelar e gerar as features | dbt · BigQuery SQL | Tabela `olist_gold.ft_satisfacao_cliente` |
+| 3 | **Treinamento** | Treinar e avaliar o modelo em ambiente reprodutível | Airflow · Docker · XGBoost | `artifacts/modelo_olist_xgb_baseline.json` |
+| 4 | **Serviço** | Servir previsões e explicações aos usuários | Streamlit Community Cloud | Aplicação web interativa |
 
 ---
 
-## 🏗️ Arquitetura
-
-O sistema segue o princípio de **desacoplamento entre treino e serviço**: a parte pesada roda em lote e de forma invisível; a parte que o usuário enxerga fica leve e disponível 24/7.
+## 🧱 Arquitetura de ponta a ponta
 
 ```mermaid
-flowchart LR
-    subgraph FABRICA["🏭 A Fábrica · Treinamento (Batch)"]
+flowchart TB
+    KG["Kaggle<br/>olistbr/brazilian-ecommerce"]
+
+    subgraph ING["1 · Ingestão · src/ingestion_bronze.py"]
         direction TB
-        BQ[("BigQuery<br/>dados Olist")] --> DAG["Apache Airflow<br/>DAG de treino"]
-        DAG -->|DockerOperator| CTR["Contêiner efêmero<br/>treino XGBoost + SHAP<br/>auto_remove=True"]
+        TMP["Diretório temporário<br/>download e unzip dos CSVs"]
+        PQ["Conversão CSV para Parquet<br/>pandas + pyarrow"]
+        TMP --> PQ
     end
 
-    subgraph ART["🌉 Contrato"]
+    subgraph DW["2 · BigQuery · transformação com dbt"]
         direction TB
-        M["artifacts/<br/>modelo_olist_xgb_baseline.json"]
-        S["artifacts/<br/>shap_summary.png"]
+        BRZ[("olist_bronze<br/>9 tabelas brutas")]
+        STG[("olist_staging<br/>7 views tipadas")]
+        SLV[("olist_silver<br/>7 tabelas limpas")]
+        GLD[("olist_gold<br/>ft_satisfacao_cliente")]
+        BRZ --> STG --> SLV --> GLD
     end
 
-    subgraph LOJA["🏪 A Loja · Inferência (Online)"]
+    subgraph TRN["3 · Treinamento · Airflow + Docker"]
         direction TB
-        APP["Streamlit<br/>Community Cloud<br/>24/7 via GitHub"] --> USR(["Usuário"])
+        AF["Airflow DAG<br/>olist_ml_pipeline"]
+        CTR["Contêiner efêmero<br/>python ml/train.py"]
+        AF -->|DockerOperator| CTR
     end
 
-    CTR --> M
-    CTR --> S
-    M --> APP
+    ART["artifacts/<br/>modelo_olist_xgb_baseline.json"]
+
+    subgraph SRV["4 · Serviço · Streamlit Community Cloud"]
+        APP["streamlit/app.py"]
+    end
+
+    KG -->|Kaggle API| TMP
+    PQ -->|"load job Parquet · WRITE_TRUNCATE"| BRZ
+    GLD -->|"SELECT *"| CTR
+    CTR -->|salva o modelo| ART
+    ART -->|lido pelo app| APP
+    APP --> USR(["Usuário"])
 ```
 
-| Camada | Papel | Tecnologia | Característica |
-|---|---|---|---|
-| 🏭 **A Fábrica** | Extrair dados, treinar o modelo e gerar artefatos | Apache Airflow · Docker · BigQuery · XGBoost · SHAP | Roda sob demanda ou agendada; o contêiner nasce, treina e se autodestrói |
-| 🌉 **O Contrato** | Ponte de comunicação entre as duas camadas | Pasta `artifacts/` | Único ponto de contato: o treino escreve, a aplicação lê |
-| 🏪 **A Loja** | Servir previsões e explicações aos usuários | Streamlit Community Cloud | Sempre no ar; não retreina nada, apenas consome o modelo |
+O sistema segue dois princípios:
 
-**Por que desacoplar?**
-- **Isolamento de falhas:** um erro no pipeline de treino não derruba o app em produção.
-- **Custo e simplicidade:** o app é leve e não precisa de credenciais do BigQuery nem de dependências de orquestração.
-- **Reprodutibilidade:** o treino roda sempre no mesmo ambiente (imagem Docker), sem o "na minha máquina funciona".
-- **Evolução independente:** é possível retreinar, trocar o modelo ou alterar a interface sem mexer na outra camada.
+- **Arquitetura em camadas (medallion):** o dado bruto nunca é alterado; cada camada seguinte adiciona qualidade e significado de negócio, até chegar a uma tabela pronta para ML.
+- **Desacoplamento entre treino e serviço:** a parte pesada roda em lote e de forma invisível (a "fábrica"); a parte que o usuário enxerga fica leve e disponível 24/7 (a "loja"). A única ligação entre elas é um arquivo de modelo.
 
 ---
 
-## ⚙️ Componentes
-
-### 1. Orquestração e contêineres (Airflow + Docker)
-
-- **`docker-compose.yaml`** (raiz): levanta os serviços do Airflow localmente com um único comando.
-- **`Dockerfile`**: encapsula o ambiente Python e todas as dependências do pipeline de ML.
-- **DAG do Airflow**: usa o **`DockerOperator`** para subir um contêiner efêmero que treina o modelo XGBoost, salva os resultados e se remove em seguida (`auto_remove=True`). Nenhum estado fica preso no contêiner de treino.
-
-### 2. Gestão de artefatos (`artifacts/`)
-
-A pasta `artifacts/` é o **contrato** entre o Airflow e o Streamlit:
-
-| Artefato | Gerado por | Consumido por | Função |
-|---|---|---|---|
-| `modelo_olist_xgb_baseline.json` | Pipeline de treino (sobrescrito a cada execução) | App Streamlit | Modelo XGBoost serializado para inferência |
-| `shap_summary.png` | Etapa de explicabilidade do pipeline | README / documentação | Gráfico SHAP global como imagem estática |
-
-![SHAP Summary](artifacts/shap_summary.png)
-
-> O gráfico acima é regenerado automaticamente a cada treino. Variáveis logísticas, em especial `dias_atraso`, dominam o topo da importância.
-
-### 3. Front-end (Streamlit)
-
-- Todo o código da interface vive em **`streamlit/app.py`**.
-- O app localiza o modelo **dinamicamente**: sobe um nível na árvore de diretórios e lê direto de `artifacts/`, sem caminhos fixos da máquina de desenvolvimento.
-- Os valores **SHAP (Waterfall Plot)** das previsões individuais são calculados em tempo real na interface, preservando a interatividade sem recalcular nem retreinar o modelo.
-
----
-
-## 🗂️ Estrutura do repositório
+## 📁 Estrutura do repositório
 
 ```text
 .
-├── artifacts/                       # Contrato Airflow ↔ Streamlit
-│   ├── modelo_olist_xgb_baseline.json
-│   └── shap_summary.png
-├── dags/                            # DAG do Airflow (DockerOperator)
+├── src/
+│   └── ingestion_bronze.py          # Estágio 1: Kaggle → Parquet → BigQuery (bronze)
+├── olist_transform/                 # Estágio 2: projeto dbt
+│   ├── dbt_project.yml              # Materialização e schema de cada camada
+│   ├── macros/
+│   │   └── generate_schema_name.sql # Força o nome exato dos schemas no BigQuery
+│   └── models/
+│       ├── staging/                 # Views: tipagem e padronização (+ testes e sources)
+│       ├── silver/                  # Tabelas: dimensões e fatos deduplicados
+│       └── gold/
+│           └── ft_satisfacao_cliente.sql   # Tabela de features + target
+├── ml/                              # Estágio 3: código de Machine Learning
+│   ├── config.py                    # Features, target e parâmetros de treino
+│   ├── data_loader.py               # Leitura da camada gold no BigQuery
+│   ├── train.py                     # Treino e exportação do modelo
+│   └── evaluate.py                  # Métricas e utilitários SHAP
+├── dags/
+│   └── olist_ml_dag.py              # DAG do Airflow (DockerOperator)
+├── artifacts/
+│   └── modelo_olist_xgb_baseline.json   # Contrato Airflow ↔ Streamlit
 ├── streamlit/
-│   └── app.py                       # Aplicação de inferência
-├── scripts/                         # Scripts da fase analítica e de treino
-├── queries/                         # SQL do BigQuery ML (fase analítica)
+│   └── app.py                       # Estágio 4: aplicação de inferência
 ├── docs/
-│   ├── HISTORICO_ANALITICO.md       # Fase 1: a história analítica
-│   └── *.png                        # Imagens da documentação
-├── Dockerfile                       # Ambiente do pipeline de treino
-├── docker-compose.yaml              # Serviços do Airflow
-└── .gitignore                       # Bloqueia chaves e segredos
+│   ├── Historico-Analitico.md       # Fase 1: a pesquisa que originou o projeto
+│   └── exemplo_site_github.mp4      # Demonstração do app
+├── logs/                            # Logs do dbt
+├── Dockerfile                       # Imagem do pipeline de treino
+├── docker-compose.yaml              # Serviço do Airflow
+├── requirements.txt                 # Dependências Python
+├── .env-exemplo                     # Modelo das variáveis de ambiente
+├── .dockerignore
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🚀 Como reproduzir
+## 📥 Ingestão (Bronze)
 
-### Pré-requisitos
+**Arquivo:** `src/ingestion_bronze.py` · **Destino:** dataset `olist_bronze` no BigQuery
 
-- [Docker](https://docs.docker.com/get-docker/) e Docker Compose instalados
-- Projeto no Google Cloud com os dados da Olist carregados no BigQuery
-- Chave de service account salva como `gcp-key.json` na raiz do projeto
-- Arquivo `.env` na raiz com as variáveis de ambiente do projeto
+A ingestão baixa o dataset diretamente do Kaggle e o entrega ao BigQuery **sem deixar arquivos no disco**. Todo o processamento acontece em um diretório temporário que é descartado ao final.
 
-> 🔒 `gcp-key.json` e `.env` **nunca devem ser versionados**. Ambos já estão cobertos pelo `.gitignore`.
-
-### Passo a passo
-
-**1. Clone o repositório**
-
-```bash
-git clone <url-do-repositorio>
-cd <nome-do-repositorio>
+```mermaid
+flowchart LR
+    A["Kaggle API<br/>autenticação via token"] --> B["Diretório temporário<br/>tempfile.TemporaryDirectory"]
+    B --> C["Download do ZIP<br/>e descompactação"]
+    C --> D["Para cada CSV:<br/>leitura com dtype=str"]
+    D --> E["Gravação em Parquet<br/>engine pyarrow"]
+    E --> F["Load job no BigQuery<br/>source_format=PARQUET"]
+    F --> G[("olist_bronze.tabela")]
 ```
 
-**2. Suba o ambiente do Airflow**
-
-```bash
-docker compose up -d --build
-```
-
-**3. Dispare o pipeline de treino**
-
-Acesse a interface web do Airflow (por padrão em `http://localhost:8080`), ative a DAG de treinamento e execute-a manualmente (*Trigger DAG*). Ao final, o contêiner efêmero se remove e a pasta `artifacts/` estará atualizada com o modelo e o gráfico SHAP.
-
-**4. Execute a aplicação localmente**
-
-```bash
-streamlit run streamlit/app.py
-```
-
-**5. Publicação (opcional)**
-
-Para colocar a aplicação no ar, conecte este repositório ao [Streamlit Community Cloud](https://streamlit.io/cloud) e aponte o arquivo principal para `streamlit/app.py`.
-
-**Para encerrar o ambiente local:**
-
-```bash
-docker compose down
-```
-
----
-
-## 📊 Desempenho do modelo
-
-Avaliação na base de teste (20% dos dados, 22.642 registros), com o modelo final ajustado via `RandomizedSearchCV`:
-
-| Métrica (classe Insatisfeito) | Valor |
+| Etapa | O que acontece |
 |---|---|
-| **Recall** | **57%** |
-| **Precisão** | **43%** |
-| **F1** | 0,49 |
-| **Acurácia geral** | **72%** |
+| **Autenticação** | `KaggleApi.authenticate()` usa o token configurado no ambiente. |
+| **Diretório virtual** | `tempfile.TemporaryDirectory()` cria uma pasta efêmera; ao sair do bloco `with`, tudo é apagado automaticamente. |
+| **Download** | `dataset_download_files("olistbr/brazilian-ecommerce", unzip=True)` baixa e descompacta o dataset direto na pasta temporária. |
+| **CSV → Parquet** | Cada CSV é lido com `dtype=str` (nenhuma inferência de tipo na ingestão) e gravado como Parquet via `pyarrow`. |
+| **Carga no BigQuery** | `load_table_from_file` com `SourceFormat.PARQUET` e `WRITE_TRUNCATE`: a tabela de destino é substituída a cada execução. |
+| **Nomeação** | O nome da tabela vem do arquivo, sem `.csv` e sem o sufixo `_dataset` (ex.: `olist_orders_dataset.csv` → `olist_bronze.olist_orders`). |
 
-- **Recall de 57%:** o modelo encontra mais da metade dos clientes que ficariam insatisfeitos.
-- **Precisão de 43%:** cerca de 4 em cada 10 alertas correspondem a clientes de fato insatisfeitos; o restante é falso alarme.
-- **Uso recomendado:** priorização de atendimento com ações de baixo custo, e não decisão automática.
+**Resultado:** 9 tabelas **brutas**, todas em texto, fiéis à origem: `olist_customers`, `olist_geolocation`, `olist_order_items`, `olist_order_payments`, `olist_order_reviews`, `olist_orders`, `olist_products`, `olist_sellers` e `product_category_name_translation`. A tipagem é responsabilidade da camada seguinte.
 
 ---
 
-## 🖥️ Aplicação (Streamlit)
+## 🔄 Transformação (dbt)
+
+**Projeto:** `olist_transform/` · **Engine:** BigQuery · **Padrão:** ELT em três camadas
+
+As transformações rodam **dentro do BigQuery**, escritas em SQL e versionadas com dbt. As dependências entre modelos são declaradas com `ref()`, o que dá ao dbt o grafo de linhagem completo.
+
+| Camada | Schema | Materialização | Papel |
+|---|---|---|---|
+| **Staging** | `olist_staging` | `view` | Converte tipos (`SAFE_CAST`), padroniza texto (`TRIM`, `UPPER`/`LOWER`) e corrige CEPs com `LPAD`. Uma view por tabela bronze. |
+| **Silver** | `olist_silver` | `table` | Dimensões e fatos limpos: deduplicação, tratamento de nulos e filtro de pedidos válidos. |
+| **Gold** | `olist_gold` | `table` | Tabela analítica final, com as features e o alvo de ML. |
+
+> A macro `generate_schema_name` sobrescreve o comportamento padrão do dbt para que os schemas tenham exatamente os nomes `olist_staging`, `olist_silver` e `olist_gold`, sem prefixos do ambiente.
+
+### Staging (7 views)
+
+`stg_olist_orders` · `stg_olist_customer` · `stg_olist_order_items` · `stg_olist_order_payments` · `stg_olist_order_reviews` · `stg_olist_products` · `stg_olist_sellers`
+
+As origens são declaradas em `_stg_olist__sources.yml` (source `bronze`). Os modelos principais têm **testes de qualidade** em `_stg_olist__models.yml`: `unique` e `not_null` nas chaves de pedidos e clientes, e `not_null` nas chaves dos itens de pedido.
+
+### Silver (7 tabelas)
+
+| Modelo | Tipo | Regra principal |
+|---|---|---|
+| `fct_orders` | Fato | Mantém apenas pedidos com status `delivered`; uma linha por `order_id`. |
+| `fct_order_items` | Fato | Uma linha por (`order_id`, `order_item_id`); nulos de preço e frete viram 0. |
+| `fct_reviews` | Fato | Uma avaliação por pedido (a mais recente, por data de resposta). |
+| `dim_customers` | Dimensão | Um registro por `customer_id`. |
+| `dim_sellers` | Dimensão | Um registro por `seller_id`. |
+| `dim_products` | Dimensão | Um registro por `product_id`; nulos tratados (`'outros'` para categoria, 0 para medidas). |
+| `dim_payments` | Dimensão | Um registro por (`order_id`, `payment_sequential`); parcelas ausentes viram 1. |
+
+A deduplicação usa `QUALIFY ROW_NUMBER() OVER (PARTITION BY ...) = 1` em todos os modelos.
+
+### Gold: `ft_satisfacao_cliente`
+
+Une pedidos, itens, avaliações, produtos, clientes, vendedores e pagamentos em uma única tabela, com **uma linha por item de pedido**. Descarta linhas sem tempo de entrega, atraso ou tempo de postagem. É a **fonte única de dados do treinamento**.
+
+| Categoria | Feature | Como é calculada |
+|---|---|---|
+| **Logística** | `tempo_entrega_dias` | Dias entre a compra e a entrega ao cliente. |
+| | `dias_atraso` | Dias entre a data estimada e a data real de entrega (negativo = chegou adiantado). |
+| | `tempo_postagem_vendedor` | Dias entre a aprovação do pedido e a entrega à transportadora. |
+| **Financeira** | `proporcao_frete` | Frete dividido pelo preço do item (`SAFE_DIVIDE`). |
+| | `valor_total_pedido` | Soma de produtos e frete do pedido. |
+| | `qtd_parcelas` | Maior número de parcelas do pedido (padrão 1). |
+| **Produto** | `qtd_fotos` | Fotos do anúncio. |
+| | `tamanho_descricao` | Caracteres da descrição do produto. |
+| | `volume_produto_cm3` | Comprimento × altura × largura da embalagem. |
+| | `qtd_itens_pedido` | Quantidade de itens do pedido. |
+| **Geográfica** | `mesma_uf` | 1 se cliente e vendedor estão no mesmo estado, senão 0. |
+| **Alvo** | `target_satisfeito` | 1 se `review_score` ≥ 4 (satisfeito), 0 caso contrário (insatisfeito). |
+
+---
+
+## 🧠 Treinamento (ML)
+
+**Pasta:** `ml/` · **Ponto de entrada:** `python ml/train.py`
+
+O código de ML é dividido em módulos com responsabilidade única:
+
+| Módulo | Responsabilidade |
+|---|---|
+| `config.py` | Fonte única de configuração: projeto, tabela gold, lista das 11 features, alvo, proporção de teste (20%), semente (42) e métrica de avaliação do XGBoost (`logloss`). Também reserva o espaço de busca de hiperparâmetros (`PARAM_GRID`, `N_ITER`, `N_SPLITS_CV`). |
+| `data_loader.py` | Lê a tabela `olist_gold.ft_satisfacao_cliente` do BigQuery e devolve um DataFrame. |
+| `train.py` | Orquestra o treino: carrega os dados, separa treino/teste, treina o modelo e exporta o artefato. |
+| `evaluate.py` | Imprime o relatório de classificação e o ROC-AUC; traz utilitários SHAP (gráficos global e individual) para análise exploratória. |
+
+### Fluxo do `train.py`
+
+```mermaid
+flowchart LR
+    A[("olist_gold<br/>ft_satisfacao_cliente")] --> B["data_loader<br/>SELECT para DataFrame"]
+    B --> C["X: 11 features<br/>y: target_satisfeito"]
+    C --> D["train_test_split<br/>80/20 · estratificado · seed 42"]
+    D --> E["scale_pos_weight<br/>= qtd classe 0 / qtd classe 1"]
+    E --> F["XGBClassifier.fit"]
+    F --> G["save_model<br/>artifacts/*.json"]
+    F --> H["evaluate<br/>classification_report + ROC-AUC"]
+```
+
+- **Divisão estratificada:** treino e teste mantêm a mesma proporção de satisfeitos e insatisfeitos.
+- **Desbalanceamento de classes:** o peso é calculado dinamicamente a cada treino (`scale_pos_weight` = classe 0 ÷ classe 1 no conjunto de treino), sem valor fixo no código. O modelo salvo hoje carrega o valor ≈ 0,30.
+- **Modelo baseline:** `XGBClassifier` (objetivo `binary:logistic`) com os hiperparâmetros padrão da biblioteca, 100 árvores, semente fixa e `eval_metric=logloss`.
+- **Avaliação:** a cada execução, o relatório de classificação (precisão, recall e F1 por classe) e o ROC-AUC na base de teste são impressos nos logs do contêiner, e portanto visíveis no log da tarefa no Airflow. Os resultados do modelo atual estão em [Desempenho do modelo](#-desempenho-do-modelo).
+
+---
+
+## 📈 Desempenho do modelo
+
+Resultado do modelo baseline na base de teste (20% da tabela gold, **21.870 linhas**), exatamente como impresso pelo `evaluate.py` ao final do treino:
+
+```text
+--- Desempenho do Modelo BASE ---
+              precision    recall  f1-score   support
+
+         0.0       0.46      0.55      0.50      5070
+         1.0       0.86      0.81      0.83     16800
+
+    accuracy                           0.75     21870
+   macro avg       0.66      0.68      0.67     21870
+weighted avg       0.77      0.75      0.76     21870
+
+ROC-AUC Score: 0.7357
+```
+
+| Métrica | Classe 0 (Insatisfeito) | Classe 1 (Satisfeito) |
+|---|---|---|
+| **Precisão** | 0,46 | 0,86 |
+| **Recall** | 0,55 | 0,81 |
+| **F1-score** | 0,50 | 0,83 |
+| **Suporte (teste)** | 5.070 | 16.800 |
+
+| Métrica global | Valor |
+|---|---|
+| **ROC-AUC** | **0,7357** |
+| **Acurácia** | 0,75 |
+
+**Como interpretar:**
+- **Recall de 55% na classe insatisfeito:** o modelo identifica pouco mais da metade dos clientes que deram nota 1 a 3. É a métrica mais relevante para o caso de uso, que é priorizar o atendimento.
+- **Precisão de 46%:** cerca de 4 a 5 em cada 10 alertas correspondem a clientes de fato insatisfeitos. Por isso, as ações sugeridas devem ser de baixo custo, já que parte dos alertas será falso alarme.
+- **ROC-AUC de 0,74:** o modelo separa os dois perfis de forma consistente e bem acima do acaso (0,50), mas está longe de ser um classificador perfeito.
+- **Acurácia deve ser lida com cautela:** a classe satisfeito representa cerca de 77% do teste (16.800 de 21.870). A acurácia sozinha engana em bases desbalanceadas, por isso o foco está no recall e no ROC-AUC da classe minoritária.
+
+---
+
+## 🐳 Orquestração e contêineres
+
+### Componentes
+
+| Arquivo | Função |
+|---|---|
+| **`Dockerfile`** | Imagem do pipeline: `python:3.12-slim`, instala o `requirements.txt` e copia o projeto. O comando padrão é `python ml/train.py`. |
+| **`docker-compose.yaml`** | Sobe o Airflow 2.7.2 (`apache/airflow:2.7.2-python3.10`) em modo `standalone`, com a interface na porta `8080`, a pasta `dags/` montada e o socket do Docker (`/var/run/docker.sock`) exposto. |
+| **`dags/olist_ml_dag.py`** | Define a DAG `olist_ml_pipeline`, que executa o treino em um contêiner efêmero. |
+| **`.dockerignore`** | Mantém fora da imagem o `.env`, a chave `gcp-key.json`, o `.venv` e a pasta `artifacts/`. |
+
+### A DAG `olist_ml_pipeline`
+
+| Parâmetro | Valor |
+|---|---|
+| **Agendamento** | Semanal, toda segunda-feira às 02:00 (cron `0 2 * * 1`) |
+| **Catchup** | Desativado |
+| **Tentativas** | 1 nova tentativa, com intervalo de 2 minutos |
+| **Tarefa** | `treinar_modelo_baseline` (`DockerOperator`) |
+| **Imagem** | `olist-refactor-pipeline:latest` |
+| **Contêiner** | Efêmero: `auto_remove=True` o destrói ao terminar |
+| **Montagens (bind mounts)** | `artifacts/` (saída do modelo) e `gcp-key.json` (credencial) |
+| **Variáveis injetadas** | `GOOGLE_APPLICATION_CREDENTIALS` e `GCP_PROJECT_ID` |
+
+### Ciclo de uma execução
+
+```mermaid
+sequenceDiagram
+    participant S as Agendamento semanal
+    participant A as Airflow (airflow_olist)
+    participant D as Docker Engine
+    participant C as Contêiner de treino
+    participant B as BigQuery (olist_gold)
+    participant F as artifacts/
+
+    S->>A: dispara a DAG olist_ml_pipeline
+    A->>D: DockerOperator via docker.sock
+    D->>C: cria o contêiner com as montagens
+    C->>B: lê ft_satisfacao_cliente
+    B-->>C: DataFrame de features
+    C->>C: split, treino XGBoost e métricas
+    C->>F: grava modelo_olist_xgb_baseline.json
+    C-->>D: encerra com sucesso
+    D-->>A: tarefa concluída
+    D->>D: auto_remove remove o contêiner
+```
+
+O Airflow não treina nada por conta própria: ele **comanda o Docker do host** (padrão *Docker-out-of-Docker*, via socket) para criar um contêiner irmão. Assim, o ambiente de treino é sempre o mesmo, definido pela imagem, e nenhum estado fica preso no contêiner depois da execução.
+
+---
+
+## 🌉 Contrato de artefatos
+
+A pasta `artifacts/` é a **ponte** entre a fábrica (Airflow) e a loja (Streamlit).
+
+| Artefato | Escrito por | Lido por | Função |
+|---|---|---|---|
+| `modelo_olist_xgb_baseline.json` | `ml/train.py` (sobrescrito a cada treino) | `streamlit/app.py` | Modelo XGBoost serializado em JSON, com as 11 features e o `scale_pos_weight` embutidos |
+
+- **Escrita:** o contêiner grava na pasta `artifacts/` do host por meio do bind mount.
+- **Publicação:** o `.gitignore` libera os modelos em JSON (`!artifacts/*.json`), então o artefato é versionado junto ao código. O Streamlit Community Cloud serve o app a partir do GitHub, portanto o modelo publicado é o que está no repositório.
+- **Validação do contrato:** ao iniciar, o app compara as features salvas dentro do modelo com as que ele próprio espera. Se divergirem, exibe um erro explícito em vez de gerar previsões incorretas. Se o arquivo não existir, orienta a executar o pipeline de treino.
+
+---
+
+## 📊 Aplicação (Streamlit)
+
+**Arquivo:** `streamlit/app.py` · **Hospedagem:** Streamlit Community Cloud (via GitHub)
 
 https://github.com/user-attachments/assets/e32f57ec-aaba-4b69-9b82-f5bd2e2470b6
 
-O app é a interface para que gestores e analistas de atendimento explorem o modelo sem programar. A cada ajuste, os novos dados são enviados ao modelo carregado de `artifacts/`, que devolve a probabilidade de insatisfação em milissegundos.
+O app é a camada de serviço: **não treina, não acessa o BigQuery e não depende do Airflow**. Ele apenas carrega o modelo de `artifacts/` (subindo um nível a partir da própria pasta, sem caminhos fixos) e o mantém em cache com `st.cache_resource`. A cada ajuste do usuário, ele calcula a previsão em milissegundos.
 
-- **Painel de simulação (barra lateral):** 11 parâmetros organizados em *Logística*, *Pedido* e *Anúncio/Produto*, com atualização em tempo real.
-- **Cenários prontos:** atalhos como *"Pedido ideal"*, *"Entrega atrasada"*, *"Compra parcelada"* e *"Anúncio fraco"*.
-- **Medidor de risco (gauge):** classifica o risco em **Baixo** (verde), **Moderado** (amarelo) e **Alto** (vermelho). No risco alto, sugere automaticamente uma ação preventiva.
-- **Explicabilidade integrada:**
-  - **Por que essa previsão?** Waterfall Plot do SHAP com os fatores de risco e de proteção daquele pedido.
-  - **Curva de sensibilidade:** isola um parâmetro (ex.: dias de atraso) e mostra como ele altera a probabilidade de satisfação.
-
----
-
-## 🔐 Segurança e governança
-
-- **Proteção de segredos:** o `.gitignore` rigoroso impede o vazamento de credenciais críticas, como `gcp-key.json` e `.env`.
-- **Princípio do menor privilégio na camada online:** o app Streamlit só lê artefatos; não acessa o BigQuery nem precisa de chaves de nuvem para servir previsões.
-- **Histórico limpo ("Clean Slate"):** o histórico do repositório foi intencionalmente reiniciado, com um único commit principal. A decisão remove rastros de testes antigos e concentra o repositório na apresentação da arquitetura de produção.
+- **Painel de simulação (barra lateral):** 11 parâmetros organizados em *Logística*, *Pedido* e *Anúncio e produto*, com atualização em tempo real.
+- **Cenários prontos:** *Padrão*, *Pedido ideal*, *Entrega atrasada*, *Compra parcelada* e *Anúncio fraco*.
+- **Medidor de risco (gauge):** a partir da probabilidade de satisfação, classifica o risco como **Alto** (abaixo de 50%), **Moderado** (50% a 60%) ou **Baixo** (acima de 60%). No risco alto, sugere uma ação preventiva.
+- **Aba "Por que essa previsão?":** contribuição de cada variável para aquele pedido, calculada em tempo real com os **valores SHAP nativos do XGBoost** (`pred_contribs`), com destaque para o maior fator de risco e o maior fator de proteção.
+- **Aba "Curva de sensibilidade":** varia um parâmetro por vez, mantendo os demais, e mostra como a probabilidade de satisfação responde.
+- **Aba "Sobre o projeto":** dicionário das features, orientação de interpretação e limitações.
 
 ---
 
-## ⚠️ Limitações
+## 🧭 Decisões de arquitetura
 
+| Decisão | Motivo |
+|---|---|
+| **ELT dentro do BigQuery** | O dado é transformado onde já está, com SQL versionado e testável via dbt, sem mover dados entre sistemas. |
+| **Parquet na ingestão** | Formato colunar, com esquema embutido e carga nativa no BigQuery. |
+| **Bronze 100% em texto** | A ingestão não faz inferência de tipos: o dado bruto chega fiel à origem e a tipagem acontece de forma explícita no staging (`SAFE_CAST`). |
+| **Diretório temporário** | Nenhum arquivo residual: a pasta é apagada automaticamente, o que simplifica a execução em qualquer ambiente. |
+| **`WRITE_TRUNCATE`** | A carga é idempotente: reexecutar a ingestão substitui a tabela em vez de duplicar linhas. |
+| **Medallion + dbt** | Separa responsabilidades por camada, documenta a linhagem com `ref()` e valida chaves com testes. |
+| **Gold como contrato de dados** | A lista de features em `ml/config.py` espelha as colunas da tabela gold; o treino consome uma única tabela pronta. |
+| **Contêiner efêmero** | Ambiente de treino idêntico a cada execução, sem estado persistente e sem sobras. |
+| **Artefato como contrato** | Treino e serviço evoluem de forma independente; a validação de features no app detecta incompatibilidades. |
+| **Peso de classe dinâmico** | O desbalanceamento é medido no próprio conjunto de treino a cada execução, sem valor fixo no código. |
+
+---
+
+## 🔑 Configuração
+
+| Item | Onde | Uso |
+|---|---|---|
+| `KAGGLE_API_TOKEN` | `.env` (modelo em `.env-exemplo`) | Autenticação na Kaggle API durante a ingestão |
+| `GCP_PROJECT_ID` | `.env` e variável do contêiner na DAG | Projeto do BigQuery em todos os estágios |
+| `gcp-key.json` | Raiz do projeto, montada no contêiner | Credencial de service account do Google Cloud |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Variável do contêiner (`/app/gcp-key.json`) | Aponta as bibliotecas do Google para a credencial montada |
+| `CAMINHO_PROJETO` | Constante em `dags/olist_ml_dag.py` | Caminho absoluto do projeto no host, usado nos bind mounts |
+| Profile `olist_transform` | Configuração do dbt, fora do repositório | Conexão do dbt com o BigQuery |
+
+---
+
+## 🚧 Limitações conhecidas
+
+- **Escopo da DAG:** hoje o Airflow orquestra o estágio de **treinamento**. A ingestão (`src/ingestion_bronze.py`) e a transformação (`dbt`) são etapas executadas à parte, ainda fora da DAG.
+- **Promoção do modelo:** o modelo treinado vai para o app por meio do versionamento do arquivo JSON no GitHub, ou seja, a publicação depende de um commit.
+- **Modelo baseline:** o treino usa os hiperparâmetros padrão do XGBoost. O espaço de busca está definido em `ml/config.py`, mas a otimização ainda não faz parte do pipeline.
+- **Granularidade e métricas:** a tabela gold tem uma linha por item de pedido e a divisão treino/teste é aleatória. Itens do mesmo pedido podem cair nos dois conjuntos, o que pode deixar as métricas um pouco otimistas.
 - **Uso após a entrega:** tempo de entrega e dias de atraso só existem depois que o pedido chega. O modelo estima o risco depois da entrega e antes da avaliação, não no momento da compra.
-- **Desempenho moderado:** recall de 57% e precisão de 43%. Serve para priorizar o atendimento, não para decidir sozinho.
-- **Correlação, não causalidade:** o modelo aprende padrões dos dados de 2016 a 2018.
-- **Base com linhas repetidas por pedido:** um mesmo pedido pode aparecer mais de uma vez (item e pagamento) e a divisão treino/teste foi aleatória, o que pode deixar as métricas um pouco otimistas.
-- **Impacto não medido:** o projeto mostra que o risco pode ser estimado, mas não mede o efeito das ações de mitigação.
+- **Probabilidades como índice de risco:** por causa do `scale_pos_weight`, as probabilidades funcionam melhor como índice de risco relativo do que como frequência real.
+- **Correlação, não causalidade:** o modelo aprende padrões dos dados de 2016 a 2018 e não mede o efeito de ações de mitigação.
 
 ---
 
 ## 📚 Origem do projeto
 
-Este sistema nasceu de uma pesquisa em análise de dados. Antes da engenharia, houve três etapas analíticas que definiram o problema, as variáveis e o algoritmo:
+Este sistema nasceu de uma pesquisa em análise de dados: logística de entrega por estado, previsão de prazos com BigQuery ML e a primeira versão do classificador de satisfação com XGBoost e SHAP. Foi essa pesquisa que definiu o problema, as variáveis e o algoritmo que hoje rodam em produção.
 
-| Etapa | Pergunta | Ferramenta | Resultado |
-|---|---|---|---|
-| **1** | Quanto tempo a entrega leva em cada estado? | Python · Pandas | SP: **8,3 dias** × RR: **29,0 dias** |
-| **2** | Dá para prever o prazo só com estado (UF) e mês? | BigQuery ML · Regressão Linear | **R² ~0,24**, **MAE 5,3 dias** |
-| **3** | Dá para identificar pedidos com risco de insatisfação? | XGBoost · SHAP | **Recall 57%** · **Precisão 43%** · **Acurácia 72%** |
-
-O fio condutor: a Etapa 2 mostrou que localização e sazonalidade não bastam, o que levou à engenharia de 11 features na Etapa 3. A Etapa 3 gerou o modelo que hoje roda em produção.
-
-📜 **Leia a história completa, com metodologia, código, métricas e gráficos, em [`docs/HISTORICO_ANALITICO.md`](docs/HISTORICO_ANALITICO.md).**
+📜 **Leia a história completa, com metodologia, decisões e resultados, em [`docs/Historico-Analitico.md`](docs/Historico-Analitico.md).**
 
 ---
 
-<sub>Dados: [Olist Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle), cerca de 100 mil pedidos anonimizados entre 2016 e 2018.</sub>
+<sub>Dados: [Olist Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle), pedidos anonimizados realizados no Brasil entre 2016 e 2018.</sub>
