@@ -13,7 +13,7 @@
 
 Plataforma de dados e Machine Learning de ponta a ponta que estima o **risco de insatisfação de clientes de e-commerce** (dados públicos da Olist). O projeto cobre todo o ciclo: **ingestão** a partir do Kaggle, **Data Warehouse em camadas** (bronze, silver e gold) no BigQuery transformado com **dbt**, **treinamento** de um modelo XGBoost orquestrado por **Apache Airflow** em contêineres **Docker**, e **inferência online** em uma aplicação **Streamlit**.
 
-🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-classifier.streamlit.app/)
+🔗 **App no ar:** [olist-satisfaction-classifier.streamlit.app](https://olist-satisfaction-class.streamlit.app/)
 
 > **Só tem um minuto?** Veja o [diagrama de ponta a ponta](#arquitetura) e abra o app.  
 > **Quer ver a pesquisa que originou o projeto?** Veja [Origem do projeto](#origem).
